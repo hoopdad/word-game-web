@@ -7,20 +7,36 @@ import './NameEntry.css'
 
 export const NameEntry = () => {
   const navigate = useNavigate()
-  const { account } = useAuth()
+  const { account, setTokenInApi } = useAuth()
   const [displayName, setDisplayName] = useState('')
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [tokenReady, setTokenReady] = useState(false)
   const debouncedName = useDebounce(displayName, 300)
 
+  // Initialize token on mount
   useEffect(() => {
+    const initToken = async () => {
+      try {
+        await setTokenInApi()
+        setTokenReady(true)
+      } catch (err) {
+        setError('Failed to initialize authentication')
+      }
+    }
+    initToken()
+  }, [setTokenInApi])
+
+  useEffect(() => {
+    // Only check name availability after token is ready
+    if (!tokenReady) return
     if (debouncedName.length >= 2 && debouncedName.length <= 20) {
       checkNameAvailability(debouncedName)
     } else if (debouncedName.length < 2) {
       setIsAvailable(null)
     }
-  }, [debouncedName])
+  }, [debouncedName, tokenReady])
 
   const checkNameAvailability = async (name: string) => {
     setLoading(true)
@@ -77,7 +93,7 @@ export const NameEntry = () => {
               placeholder="2-20 characters"
               maxLength={20}
               minLength={2}
-              disabled={loading}
+              disabled={loading || !tokenReady}
               aria-describedby={isAvailable === false ? 'name-error' : undefined}
             />
             {loading && <span className="loading">Checking...</span>}

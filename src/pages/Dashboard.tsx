@@ -6,14 +6,16 @@ import './Dashboard.css'
 
 export const Dashboard = () => {
   const navigate = useNavigate()
-  const { send } = useWebSocket()
-  const [activeUsers] = useState<string[]>([])
+  const { send, on, off } = useWebSocket()
+  const [activeUsers, setActiveUsers] = useState<string[]>([])
   const [gameCount, setGameCount] = useState(0)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [allTimeLeaderboard, setAllTimeLeaderboard] = useState<any[]>([])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [todayLeaderboard, setTodayLeaderboard] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [lastGameResult, setLastGameResult] = useState<any | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,7 +36,38 @@ export const Dashboard = () => {
     }
 
     fetchData()
-  }, [])
+
+    // Subscribe to WebSocket events
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleUserJoined = (data: any) => {
+      setActiveUsers((prev) => {
+        const newUsers = [...prev, data.user]
+        return [...new Set(newUsers)]
+      })
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleUserLeft = (data: any) => {
+      setActiveUsers((prev) => prev.filter((user) => user !== data.user))
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleGameEnded = (data: any) => {
+      setLastGameResult(data)
+      // Auto-clear celebration after 5 seconds
+      setTimeout(() => setLastGameResult(null), 5000)
+    }
+
+    on('user_joined', handleUserJoined)
+    on('user_left', handleUserLeft)
+    on('game_ended', handleGameEnded)
+
+    return () => {
+      off('user_joined', handleUserJoined)
+      off('user_left', handleUserLeft)
+      off('game_ended', handleGameEnded)
+    }
+  }, [on, off])
 
   const handleStartGame = () => {
     send({ type: 'start_game' })
@@ -54,6 +87,12 @@ export const Dashboard = () => {
           </button>
         </div>
       </header>
+
+      {lastGameResult && (
+        <div className="post-game-status">
+          🎉 Congratulations to {lastGameResult.winners.join(', ')}! 🎉
+        </div>
+      )}
 
       <main className="dashboard-main">
         {loading ? (
