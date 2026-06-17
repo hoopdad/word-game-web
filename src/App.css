@@ -1,0 +1,11 @@
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Global responsive */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,58 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted]
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t word-game-web:${{ github.sha }} .
+
+      - name: Push to ACR
+        run: |
+          az acr login --name ${{ secrets.ACR_NAME }}
+          docker tag word-game-web:${{ github.sha }} ${{ secrets.ACR_NAME }}.azurecr.io/word-game-web:${{ github.sha }}
+          docker tag word-game-web:${{ github.sha }} ${{ secrets.ACR_NAME }}.azurecr.io/word-game-web:latest
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/word-game-web:${{ github.sha }}
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/word-game-web:latest
+
+      - name: Deploy to Container App
+        run: |
+          az containerapp update \
+            --name word-game-web \
+            --resource-group ${{ secrets.RESOURCE_GROUP }} \
+            --image ${{ secrets.ACR_NAME }}.azurecr.io/word-game-web:${{ github.sha }}
+
+      - name: Log out
+        run: az logout
