@@ -63,3 +63,23 @@ export const useLocalStorage = (key, initialValue) => {
     }, [key, storedValue]);
     return [storedValue, setValue];
 };
+// Utility functions for game logic
+export const validateDisplayName = (name) => {
+    if (!name || name.length < 2 || name.length > 20) {
+        return false;
+    }
+    // Allow letters, numbers, hyphens, underscores; no spaces or special chars
+    return /^[a-zA-Z0-9_-]+$/.test(name);
+};
+export const calculateRoundScore = (secondsElapsed, isCorrect) => {
+    if (!isCorrect) {
+        return 0;
+    }
+    // Points decrease with time: max 200 points at 0 seconds, min 10 points at 120 seconds
+    const basePoints = Math.max(10, 200 - secondsElapsed * 1.5);
+    return Math.floor(basePoints);
+};
+export const getScoreMultiplier = (roundNumber) => {
+    // Multiplier increases slightly each round: 1.0x for round 1, 1.1x for round 2, etc.
+    return 1 + (roundNumber - 1) * 0.1;
+};

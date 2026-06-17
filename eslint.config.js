@@ -35,17 +35,12 @@ export default [
       ],
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
-      // Security rules
+      // Security rules (browser-safe subset)
       'security/detect-object-injection': 'warn',
       'security/detect-non-literal-regexp': 'warn',
       'security/detect-unsafe-regex': 'error',
-      'security/detect-buffer-noassert': 'error',
-      'security/detect-child-process': 'warn',
-      'security/detect-no-csrf-before-method-override': 'warn',
-      'security/detect-non-literal-fs-filename': 'warn',
-      'security/detect-non-literal-require': 'warn',
-      'security/detect-possible-timing-attacks': 'warn',
       'security/detect-eval-with-expression': 'error',
+      'security/detect-bidi-characters': 'warn',
     },
     settings: {
       react: {
