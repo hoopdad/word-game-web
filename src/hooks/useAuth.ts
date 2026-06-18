@@ -13,7 +13,7 @@ export const useAuth = () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await instance.acquireTokenSilent({
         account,
-        scopes: ['api://word-game/user_impersonation'],
+        scopes: [`api://${import.meta.env.VITE_MSAL_API_CLIENT_ID}/access_as_user`],
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (response as any).accessToken
@@ -21,7 +21,7 @@ export const useAuth = () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await instance.acquireTokenRedirect({
         account,
-        scopes: ['api://word-game/user_impersonation'],
+        scopes: [`api://${import.meta.env.VITE_MSAL_API_CLIENT_ID}/access_as_user`],
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (response as any)?.accessToken || ''
@@ -30,7 +30,7 @@ export const useAuth = () => {
 
   const login = useCallback(async () => {
     await instance.loginPopup({
-      scopes: ['api://word-game/user_impersonation'],
+      scopes: [`api://${import.meta.env.VITE_MSAL_API_CLIENT_ID}/access_as_user`],
     })
   }, [instance])
 
