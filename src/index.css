@@ -54,10 +54,10 @@ input:focus {
   outline-offset: 2px;
 }
 
-/* Dark mode support */
+/* Dark mode: override body only — component styles use their own backgrounds */
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #1a1a1a;
-    color: #f0f0f0;
+    background-color: #f5f5f5;
+    color: #333;
   }
 }

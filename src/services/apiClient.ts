@@ -55,13 +55,23 @@ class ApiClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getAllTimeLeaderboard(): Promise<any[]> {
     const response = await this.client.get('/scores/all-time')
-    return response.data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return ((response.data as any).scores || []).map((s: any) => ({
+      userId: s.user_id,
+      displayName: s.user_id,
+      points: s.total_points,
+    }))
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getTodayLeaderboard(): Promise<any[]> {
     const response = await this.client.get('/scores/today')
-    return response.data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return ((response.data as any).scores || []).map((s: any) => ({
+      userId: s.user_id,
+      displayName: s.user_id,
+      points: s.total_points,
+    }))
   }
 
   async startGame(): Promise<string> {
