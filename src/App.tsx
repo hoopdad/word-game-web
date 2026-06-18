@@ -31,7 +31,7 @@ const wsUrl = import.meta.env.VITE_WS_BASE_URL ||
     ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
     : 'ws://localhost:5000/ws')
 
-const AuthenticatedRoutes = () => {
+const GameRoutes = () => {
   const { isAuthenticated, setTokenInApi } = useAuth()
   const displayName = localStorage.getItem('displayName')
 
@@ -42,14 +42,6 @@ const AuthenticatedRoutes = () => {
       return ticket
     }}>
       <Routes>
-        <Route
-          path="/register"
-          element={
-            <ProtectedRoute requiredAuth={true}>
-              {isAuthenticated && !displayName ? <NameEntry /> : <Navigate to="/dashboard" />}
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/dashboard"
           element={
@@ -81,12 +73,23 @@ const AuthenticatedRoutes = () => {
 
 const AppContent = () => {
   const { isAuthenticated } = useAuth()
+  const displayName = localStorage.getItem('displayName')
 
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/welcome" element={<LandingPage />} />
-        {isAuthenticated && <Route path="/*" element={<AuthenticatedRoutes />} />}
+        {isAuthenticated && (
+          <Route
+            path="/register"
+            element={
+              <ProtectedRoute requiredAuth={true}>
+                {!displayName ? <NameEntry /> : <Navigate to="/dashboard" />}
+              </ProtectedRoute>
+            }
+          />
+        )}
+        {isAuthenticated && <Route path="/*" element={<GameRoutes />} />}
         <Route path="/" element={<Navigate to="/welcome" />} />
         {!isAuthenticated && <Route path="*" element={<Navigate to="/welcome" />} />}
       </Routes>

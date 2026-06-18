@@ -76,7 +76,7 @@ class ApiClient {
   }
 
   async getWebSocketTicket(): Promise<string> {
-    const response = await this.client.get('/game/ws-ticket')
+    const response = await this.client.post('/auth/ws-ticket')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (response.data as any).ticket
   }
