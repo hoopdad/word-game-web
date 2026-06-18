@@ -38,7 +38,7 @@ jobs:
         run: npm ci
 
       - name: Run security-focused ESLint scan
-        run: npx eslint --plugin security . --max-warnings 0
+        run: npx eslint . --max-warnings 0
 
       - name: Run semgrep (if available)
         run: |
