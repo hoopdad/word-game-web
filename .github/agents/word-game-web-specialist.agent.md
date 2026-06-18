@@ -25,13 +25,27 @@ Run this workflow only from the child repo root via a NEW Copilot CLI invocation
    - Test: `npm test`
    - Build: `npm run build`
    - Docker: `docker build -t word-game-web:local .`
+   - **Contract check:** When modifying API calls (apiClient.ts or any service that calls the backend), verify EVERY request matches `.contracts/game-api.yml`:
+     - Path must match contract endpoint path (with `/api` prefix via base URL)
+     - HTTP method must match
+     - Request body field names must use **snake_case** to match Pydantic models (e.g., `display_name`, NOT `displayName`)
+     - Response field names consumed must match contract response schema
 5. Commit with a conventional commit message when handing off to critic review, with exactly one commit per specialist→critic iteration (1 loop = 1 commit; 3 loops = 3 commits)
    - **MANDATORY:** Run `git status` before handoff and verify the output shows "working tree clean" — if any files are uncommitted, fix this before moving to step 6
 6. Append a short implementation summary to the request file and move it to `work/ready-for-review/`
 7. If a parent orchestrator tries to route child execution through background sub-agents or `task`, reject that path and insist on MCP-first orchestration (`check_repo_index` + async child-agent-runner dispatch tools such as `start_child_agents_batch`/`start_child_agent`)
 
+## API Contract Alignment Rules
+- The API uses Python/FastAPI with Pydantic models — all field names are **snake_case**
+- The frontend must send snake_case field names in request bodies (e.g., `{ display_name: value }`)
+- JavaScript variable names (camelCase) are fine internally, but must be converted at the API boundary
+- The `apiClient.ts` base URL must be `/api` (relative) — never an absolute URL or localhost in production
+- WebSocket and MSAL redirect URLs must be derived from `window.location` at runtime, not build-time env vars
+- Read `.contracts/game-api.yml` to verify path, method, and field name alignment before any API-touching change
+
 ## MCP Skill/Workflow Callouts
 - **Linting:** Use `run_local_lint` before tests/builds to catch fast local issues.
+- **Contract checks:** Use `check_contract_compliance` when API calls or service code changes.
 - **Security:** Run `security_scan` before handoff.
 - **Usage quality:** Log major steps with `log_usage`; if iteration loops, call `get_usage_quality_report`.
 

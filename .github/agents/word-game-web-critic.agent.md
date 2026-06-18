@@ -18,6 +18,11 @@ Run this workflow only from the child repo root via a NEW Copilot CLI invocation
    - Confirm CI enforces `needs:` ordering `lint -> security-scan -> test -> build`
    - Confirm CI includes a dedicated security scan job (eslint security plugin + semgrep-if-available)
    - Confirm CD uses SHA-named deployment pattern (`wordgame-web-v<sha7>`) with create/health-check/cleanup flow
+   - **Contract alignment check** (when API calls change): read `.contracts/game-api.yml` and verify:
+     - All request body field names are **snake_case** (must match Pydantic models, e.g., `display_name` not `displayName`)
+     - All API paths in `apiClient.ts` match contract endpoint paths (method + path)
+     - `VITE_API_BASE_URL` is set to `/api` (relative) in deploy script, not absolute URL
+     - MSAL `redirectUri` and WebSocket URLs use `window.location` runtime derivation, not build-time env vars
 3. If changes are required, append concrete feedback and move the request back to `work/todo/`
 4. Iterate with the specialist until requirements are met
 5. When acceptable, append PASS rationale and move the request file to `work/done/`
