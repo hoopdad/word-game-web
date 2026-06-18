@@ -40,6 +40,12 @@ class ApiClient {
     await this.client.post('/users/register', { display_name: displayName })
   }
 
+  async getActiveUsers(): Promise<string[]> {
+    const response = await this.client.get('/users/active')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (response.data as any).users.map((u: any) => u.display_name)
+  }
+
   async getGameCount(): Promise<number> {
     const response = await this.client.get('/scores/game-count')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

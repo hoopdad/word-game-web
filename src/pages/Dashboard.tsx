@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWebSocket } from '@/context/WebSocketContext'
+import { useAuth } from '@/hooks/useAuth'
 import apiClient from '@/services/apiClient'
 import './Dashboard.css'
 
 export const Dashboard = () => {
   const navigate = useNavigate()
   const { send, on, off } = useWebSocket()
+  const { logout, setTokenInApi } = useAuth()
   const [activeUsers, setActiveUsers] = useState<string[]>([])
   const [gameCount, setGameCount] = useState(0)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,14 +22,19 @@ export const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [gameCountData, allTimeData, todayData] = await Promise.all([
+        // Ensure token is set before making API calls
+        await setTokenInApi()
+
+        const [gameCountData, allTimeData, todayData, activeData] = await Promise.all([
           apiClient.getGameCount(),
           apiClient.getAllTimeLeaderboard(),
           apiClient.getTodayLeaderboard(),
+          apiClient.getActiveUsers(),
         ])
         setGameCount(gameCountData)
         setAllTimeLeaderboard(allTimeData)
         setTodayLeaderboard(todayData)
+        setActiveUsers(activeData)
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error)
       } finally {
@@ -67,7 +74,7 @@ export const Dashboard = () => {
       off('user_left', handleUserLeft)
       off('game_ended', handleGameEnded)
     }
-  }, [on, off])
+  }, [on, off, setTokenInApi])
 
   const handleStartGame = () => {
     send({ type: 'start_game' })
@@ -82,7 +89,7 @@ export const Dashboard = () => {
           <button className="nav-button" onClick={() => navigate('/categories')}>
             Configure Categories
           </button>
-          <button className="logout-button" onClick={() => (window.location.href = '/logout')}>
+          <button className="logout-button" onClick={logout}>
             Logout
           </button>
         </div>
