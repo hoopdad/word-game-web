@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocalStorage } from '@/hooks/useCustomHooks'
 import './LandingPage.css'
@@ -16,7 +17,7 @@ export const LandingPage = () => {
   }
 
   if (isAuthenticated) {
-    return null
+    return <Navigate to="/register" replace />
   }
 
   return (
