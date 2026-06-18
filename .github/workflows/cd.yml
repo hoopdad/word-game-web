@@ -52,10 +52,9 @@ jobs:
       - name: Build and push Docker images
         run: |
           set -euo pipefail
-          az acr login --name "$ACR_NAME"
-          docker build -t "$IMAGE_SHA" -t "$IMAGE_LATEST" .
-          docker push "$IMAGE_SHA"
-          docker push "$IMAGE_LATEST"
+          az acr build --registry "$ACR_NAME" \
+            --image "word-game-web:${SHA}" \
+            --image "word-game-web:latest" .
 
       - name: Create SHA-named Container App
         run: |
