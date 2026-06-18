@@ -1,7 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MsalProvider } from '@azure/msal-react';
-import { PublicClientApplication } from '@azure/msal-browser';
 import { WebSocketProvider } from '@/context/WebSocketContext';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/services/apiClient';
@@ -12,18 +11,6 @@ import { GameScreen } from '@/pages/GameScreen';
 import { CategoryConfig } from '@/pages/CategoryConfig';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import './App.css';
-const msalConfig = {
-    auth: {
-        clientId: import.meta.env.VITE_MSAL_CLIENT_ID || '',
-        authority: import.meta.env.VITE_MSAL_AUTHORITY || '',
-        redirectUri: import.meta.env.VITE_MSAL_REDIRECT_URI || 'http://localhost:3000/welcome',
-    },
-    cache: {
-        cacheLocation: 'sessionStorage',
-        storeAuthStateInCookie: false,
-    },
-};
-const msalInstance = new PublicClientApplication(msalConfig);
 const wsUrl = import.meta.env.VITE_WS_BASE_URL ||
     (typeof window !== 'undefined'
         ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
@@ -41,7 +28,7 @@ const AppContent = () => {
     const { isAuthenticated } = useAuth();
     return (_jsx(BrowserRouter, { children: _jsxs(Routes, { children: [_jsx(Route, { path: "/welcome", element: _jsx(LandingPage, {}) }), isAuthenticated && _jsx(Route, { path: "/*", element: _jsx(AuthenticatedRoutes, {}) }), _jsx(Route, { path: "/", element: _jsx(Navigate, { to: "/welcome" }) }), !isAuthenticated && _jsx(Route, { path: "*", element: _jsx(Navigate, { to: "/welcome" }) })] }) }));
 };
-const App = () => {
+const App = ({ msalInstance }) => {
     return (_jsx(MsalProvider, { instance: msalInstance, children: _jsx(AppContent, {}) }));
 };
 export default App;

@@ -12,20 +12,6 @@ import { CategoryConfig } from '@/pages/CategoryConfig'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import './App.css'
 
-const msalConfig = {
-  auth: {
-    clientId: import.meta.env.VITE_MSAL_CLIENT_ID || '',
-    authority: import.meta.env.VITE_MSAL_AUTHORITY || '',
-    redirectUri: `${window.location.origin}/welcome`,
-  },
-  cache: {
-    cacheLocation: 'sessionStorage',
-    storeAuthStateInCookie: false,
-  },
-}
-
-const msalInstance = new PublicClientApplication(msalConfig)
-
 const wsUrl = import.meta.env.VITE_WS_BASE_URL ||
   (typeof window !== 'undefined'
     ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
@@ -97,7 +83,7 @@ const AppContent = () => {
   )
 }
 
-const App = () => {
+const App = ({ msalInstance }: { msalInstance: PublicClientApplication }) => {
   return (
     <MsalProvider instance={msalInstance}>
       <AppContent />
