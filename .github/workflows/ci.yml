@@ -2,13 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 jobs:
   lint:
-    runs-on: [self-hosted]
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -23,8 +23,36 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+  security-scan:
+    runs-on: self-hosted
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security-focused ESLint scan
+        run: npx eslint --plugin security . --max-warnings 0
+
+      - name: Run semgrep (if available)
+        run: |
+          if npx --no-install semgrep --version >/dev/null 2>&1; then
+            npx semgrep --config auto --exclude node_modules --exclude dist
+          elif command -v semgrep >/dev/null 2>&1; then
+            semgrep --config auto --exclude node_modules --exclude dist
+          else
+            echo "Semgrep is not available on this runner. Skipping."
+          fi
+
   test:
-    runs-on: [self-hosted]
+    runs-on: self-hosted
+    needs: security-scan
     steps:
       - uses: actions/checkout@v4
 
@@ -40,7 +68,8 @@ jobs:
         run: npm test
 
   build:
-    runs-on: [self-hosted]
+    runs-on: self-hosted
+    needs: test
     steps:
       - uses: actions/checkout@v4
 
@@ -56,7 +85,7 @@ jobs:
         run: npm run build
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/

@@ -1,0 +1,23 @@
+{
+  "_framework_version": "0.1.0",
+  "mcpServers": {
+    "lint-local": {
+      "description": "Run safe local lint commands (eslint/prettier).",
+      "command": "/home/mike/source/enterprise-copilot-fleet-controller/.venv/bin/python3",
+      "args": ["/home/mike/source/enterprise-copilot-fleet-controller/tools/lint-local/server.py"],
+      "env": {}
+    },
+    "security-scanner": {
+      "description": "Run available scanners and normalize findings into one report.",
+      "command": "/home/mike/source/enterprise-copilot-fleet-controller/.venv/bin/python3",
+      "args": ["/home/mike/source/enterprise-copilot-fleet-controller/tools/security-scanner/server.py"],
+      "env": {}
+    },
+    "usage-tracker": {
+      "description": "Append usage events, summarize recent workflow activity, and report usage quality/anomalies.",
+      "command": "/home/mike/source/enterprise-copilot-fleet-controller/.venv/bin/python3",
+      "args": ["/home/mike/source/enterprise-copilot-fleet-controller/tools/usage-tracker/server.py"],
+      "env": { "PROJECT_DIR": "/home/mike/source/word-game/word-game-harness", "PROJECT_NAME": "word-game" }
+    }
+  }
+}
