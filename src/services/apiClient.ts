@@ -37,7 +37,7 @@ class ApiClient {
   }
 
   async registerUser(displayName: string): Promise<void> {
-    await this.client.post('/users/register', { displayName })
+    await this.client.post('/users/register', { display_name: displayName })
   }
 
   async getGameCount(): Promise<number> {

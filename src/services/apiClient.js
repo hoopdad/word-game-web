@@ -42,7 +42,7 @@ class ApiClient {
         }
     }
     async registerUser(displayName) {
-        await this.client.post('/users/register', { displayName });
+        await this.client.post('/users/register', { display_name: displayName });
     }
     async getGameCount() {
         const response = await this.client.get('/scores/game-count');
