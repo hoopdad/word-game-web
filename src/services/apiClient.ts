@@ -83,7 +83,8 @@ class ApiClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getCategoryConfig(): Promise<any> {
     const response = await this.client.get('/categories/config')
-    return response.data
+    // Returns {urls, generated_categories, source} — used as object
+    return response.data as { urls: string[]; generated_categories: string[]; source: string }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
