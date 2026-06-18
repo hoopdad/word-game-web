@@ -16,7 +16,7 @@ const msalConfig = {
   auth: {
     clientId: import.meta.env.VITE_MSAL_CLIENT_ID || '',
     authority: import.meta.env.VITE_MSAL_AUTHORITY || '',
-    redirectUri: import.meta.env.VITE_MSAL_REDIRECT_URI || 'http://localhost:3000/welcome',
+    redirectUri: `${window.location.origin}/welcome`,
   },
   cache: {
     cacheLocation: 'sessionStorage',
