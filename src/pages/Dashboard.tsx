@@ -8,7 +8,7 @@ import './Dashboard.css'
 export const Dashboard = () => {
   const navigate = useNavigate()
   const { send, on, off } = useWebSocket()
-  const { logout, setTokenInApi } = useAuth()
+  const { logout, setTokenInApi, isAuthenticated } = useAuth()
   const [activeUsers, setActiveUsers] = useState<string[]>([])
   const [gameCount, setGameCount] = useState(0)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,6 +21,7 @@ export const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!isAuthenticated) return
       try {
         // Ensure token is set before making API calls
         await setTokenInApi()
@@ -74,7 +75,7 @@ export const Dashboard = () => {
       off('user_left', handleUserLeft)
       off('game_ended', handleGameEnded)
     }
-  }, [on, off, setTokenInApi])
+  }, [on, off, setTokenInApi, isAuthenticated])
 
   const handleStartGame = () => {
     send({ type: 'start_game' })

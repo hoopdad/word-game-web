@@ -9,22 +9,17 @@ export const useAuth = () => {
   const getAccessToken = useCallback(async (): Promise<string> => {
     if (!account) throw new Error('No account found')
 
+    const scopes = [`api://${import.meta.env.VITE_MSAL_API_CLIENT_ID}/access_as_user`]
+
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response = await instance.acquireTokenSilent({
-        account,
-        scopes: [`api://${import.meta.env.VITE_MSAL_API_CLIENT_ID}/access_as_user`],
-      })
+      const response = await instance.acquireTokenSilent({ account, scopes })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (response as any).accessToken
-    } catch (error) {
+    } catch {
+      // Use popup (not redirect) to avoid infinite page reload loops
+      const response = await instance.acquireTokenPopup({ account, scopes })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response = await instance.acquireTokenRedirect({
-        account,
-        scopes: [`api://${import.meta.env.VITE_MSAL_API_CLIENT_ID}/access_as_user`],
-      })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (response as any)?.accessToken || ''
+      return (response as any).accessToken
     }
   }, [account, instance])
 
