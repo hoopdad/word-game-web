@@ -12,8 +12,10 @@ RUN npm run build
 
 FROM nginx:alpine
 
-RUN addgroup -g 101 -S nginx && \
-    adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -c "Nginx web server" -G nginx nginx
+RUN if ! grep -q '^nginx:' /etc/group; then addgroup -g 101 -S nginx; fi && \
+    if ! id -u nginx >/dev/null 2>&1; then \
+      adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -c "Nginx web server" -G nginx nginx; \
+    fi
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 

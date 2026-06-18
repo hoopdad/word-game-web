@@ -10,7 +10,10 @@ Run this workflow only from the child repo root via a NEW Copilot CLI invocation
 ## Your Scope
 - Repository: ../word-game-web
 - Stack: TypeScript / React 18 / Vite / Vitest / Playwright
-- Validation: `npm run lint && npm test`
+- Validation: `npm run lint && npm test && npm run build && docker build -t word-game-web:local .`
+- Workflows must run on `self-hosted` runners only.
+- CD must use SHA-named Container Apps (`wordgame-web-v<sha7>`) with image tags `:sha` and `:latest`.
+- Use standardized secret names in workflows: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `ACR_NAME`, `ACR_LOGIN_SERVER`, `RESOURCE_GROUP`, `CONTAINER_APP_ENV`, `MANAGED_IDENTITY_ID`.
 
 ## Protocol
 1. Pick the next change request file from `work/todo/` (one file = one request)
@@ -21,6 +24,7 @@ Run this workflow only from the child repo root via a NEW Copilot CLI invocation
    - Lint: `npm run lint`
    - Test: `npm test`
    - Build: `npm run build`
+   - Docker: `docker build -t word-game-web:local .`
 5. Commit with a conventional commit message when handing off to critic review, with exactly one commit per specialist→critic iteration (1 loop = 1 commit; 3 loops = 3 commits)
    - **MANDATORY:** Run `git status` before handoff and verify the output shows "working tree clean" — if any files are uncommitted, fix this before moving to step 6
 6. Append a short implementation summary to the request file and move it to `work/ready-for-review/`

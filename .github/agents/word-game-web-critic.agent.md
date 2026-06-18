@@ -14,6 +14,10 @@ Run this workflow only from the child repo root via a NEW Copilot CLI invocation
 ## Protocol
 1. Pick the next request file from `work/ready-for-review/`
 2. Verify acceptance criteria, contracts, and `.requirements/platform-guardrails.yml` `pattern_constraints` are satisfied; run lint/test/build as needed
+   - Confirm every workflow job uses `runs-on: self-hosted`
+   - Confirm CI enforces `needs:` ordering `lint -> security-scan -> test -> build`
+   - Confirm CI includes a dedicated security scan job (eslint security plugin + semgrep-if-available)
+   - Confirm CD uses SHA-named deployment pattern (`wordgame-web-v<sha7>`) with create/health-check/cleanup flow
 3. If changes are required, append concrete feedback and move the request back to `work/todo/`
 4. Iterate with the specialist until requirements are met
 5. When acceptable, append PASS rationale and move the request file to `work/done/`
