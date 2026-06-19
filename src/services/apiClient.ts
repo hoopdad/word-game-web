@@ -1,5 +1,15 @@
 import axios, { AxiosInstance } from 'axios'
 
+interface CategoryConfigResponse {
+  urls: string[]
+  generated_categories: string[]
+  source: string
+}
+
+interface CategoryConfigUpdateRequest {
+  urls: string[]
+}
+
 class ApiClient {
   private client: AxiosInstance
   private authToken?: string
@@ -38,6 +48,10 @@ class ApiClient {
 
   async registerUser(displayName: string): Promise<void> {
     await this.client.post('/users/register', { display_name: displayName })
+  }
+
+  async updateProfile(displayName: string): Promise<void> {
+    await this.client.put('/users/profile', { display_name: displayName })
   }
 
   async getActiveUsers(): Promise<string[]> {
@@ -80,15 +94,12 @@ class ApiClient {
     return (response.data as any).gameId
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async getCategoryConfig(): Promise<any> {
+  async getCategoryConfig(): Promise<CategoryConfigResponse> {
     const response = await this.client.get('/categories/config')
-    // Returns {urls, generated_categories, source} — used as object
-    return response.data as { urls: string[]; generated_categories: string[]; source: string }
+    return response.data as CategoryConfigResponse
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async updateCategoryConfig(config: any): Promise<void> {
+  async updateCategoryConfig(config: CategoryConfigUpdateRequest): Promise<void> {
     await this.client.put('/categories/config', config)
   }
 

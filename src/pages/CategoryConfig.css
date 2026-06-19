@@ -158,6 +158,15 @@
   font-size: 0.9rem;
 }
 
+.success-message {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
 .action-buttons {
   display: flex;
   gap: 1rem;

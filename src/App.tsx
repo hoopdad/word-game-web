@@ -9,6 +9,7 @@ import { NameEntry } from '@/pages/NameEntry'
 import { Dashboard } from '@/pages/Dashboard'
 import { GameScreen } from '@/pages/GameScreen'
 import { CategoryConfig } from '@/pages/CategoryConfig'
+import { Profile } from '@/pages/Profile'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import './App.css'
 
@@ -49,6 +50,14 @@ const GameRoutes = () => {
           element={
             <ProtectedRoute requiredAuth={true}>
               {isAuthenticated && displayName ? <CategoryConfig /> : <Navigate to="/register" />}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute requiredAuth={true}>
+              {isAuthenticated && displayName ? <Profile /> : <Navigate to="/register" />}
             </ProtectedRoute>
           }
         />

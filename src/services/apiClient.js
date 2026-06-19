@@ -44,6 +44,14 @@ class ApiClient {
     async registerUser(displayName) {
         await this.client.post('/users/register', { display_name: displayName });
     }
+    async updateProfile(displayName) {
+        await this.client.put('/users/profile', { display_name: displayName });
+    }
+    async getActiveUsers() {
+        const response = await this.client.get('/users/active');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return response.data.users.map((u) => u.display_name);
+    }
     async getGameCount() {
         const response = await this.client.get('/scores/game-count');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,29 +60,37 @@ class ApiClient {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getAllTimeLeaderboard() {
         const response = await this.client.get('/scores/all-time');
-        return response.data;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (response.data.scores || []).map((s) => ({
+            userId: s.user_id,
+            displayName: s.user_id,
+            points: s.total_points,
+        }));
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getTodayLeaderboard() {
         const response = await this.client.get('/scores/today');
-        return response.data;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (response.data.scores || []).map((s) => ({
+            userId: s.user_id,
+            displayName: s.user_id,
+            points: s.total_points,
+        }));
     }
     async startGame() {
         const response = await this.client.post('/game/start', {});
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return response.data.gameId;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getCategoryConfig() {
         const response = await this.client.get('/categories/config');
         return response.data;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateCategoryConfig(config) {
         await this.client.put('/categories/config', config);
     }
     async getWebSocketTicket() {
-        const response = await this.client.get('/game/ws-ticket');
+        const response = await this.client.post('/auth/ws-ticket');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return response.data.ticket;
     }

@@ -17,5 +17,5 @@ const msalConfig = {
 };
 const msalInstance = new PublicClientApplication(msalConfig);
 msalInstance.initialize().then(() => {
-    ReactDOM.createRoot(document.getElementById('root')).render(_jsx(React.StrictMode, { children: _jsx(App, { msalInstance }) }));
+    ReactDOM.createRoot(document.getElementById('root')).render(_jsx(React.StrictMode, { children: _jsx(App, { msalInstance: msalInstance }) }));
 });

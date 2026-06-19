@@ -14,14 +14,16 @@ export const CategoryConfig = () => {
   const [newUrl, setNewUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const config = await apiClient.getCategoryConfig()
-        setCategories(config.urls || [])
-      } catch (err) {
+        setCategories((config.urls || []).map((url, index) => ({ id: `${index}`, url })))
+        setError(null)
+      } catch {
         setError('Failed to load categories')
       } finally {
         setLoading(false)
@@ -41,38 +43,45 @@ export const CategoryConfig = () => {
   }
 
   const handleAddUrl = () => {
-    if (!newUrl.trim()) {
+    const trimmedUrl = newUrl.trim()
+
+    if (!trimmedUrl) {
       setError('Please enter a URL')
       return
     }
 
-    if (!isValidUrl(newUrl)) {
+    if (!isValidUrl(trimmedUrl)) {
       setError('Invalid URL format')
       return
     }
 
-    if (categories.some((c) => c.url === newUrl)) {
+    if (categories.some((c) => c.url === trimmedUrl)) {
       setError('This URL is already added')
       return
     }
 
-    setCategories([...categories, { id: Date.now().toString(), url: newUrl }])
+    setCategories([...categories, { id: Date.now().toString(), url: trimmedUrl }])
     setNewUrl('')
     setError(null)
+    setSuccessMessage(null)
   }
 
   const handleRemoveUrl = (id: string) => {
     setCategories(categories.filter((c) => c.id !== id))
+    setSuccessMessage(null)
   }
 
   const handleSave = async () => {
     setSaving(true)
+    setError(null)
+    setSuccessMessage(null)
     try {
       await apiClient.updateCategoryConfig({ urls: categories.map((c) => c.url) })
-      navigate('/dashboard')
-    } catch (err) {
+      setSaving(false)
+      setSuccessMessage('Categories saved! Generation in progress...')
+      window.setTimeout(() => navigate('/dashboard'), 1500)
+    } catch {
       setError('Failed to save categories')
-    } finally {
       setSaving(false)
     }
   }
@@ -83,6 +92,7 @@ export const CategoryConfig = () => {
         <h1>Configure Categories</h1>
 
         {error && <div className="error-message">{error}</div>}
+        {successMessage && <div className="success-message">{successMessage}</div>}
 
         {loading ? (
           <div className="loading">Loading categories...</div>

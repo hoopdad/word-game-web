@@ -14,6 +14,10 @@ describe('apiClient', () => {
     expect(typeof apiClient.registerUser).toBe('function')
   })
 
+  it('should have updateProfile method', () => {
+    expect(typeof apiClient.updateProfile).toBe('function')
+  })
+
   it('should have getGameCount method', () => {
     expect(typeof apiClient.getGameCount).toBe('function')
   })

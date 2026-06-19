@@ -87,6 +87,9 @@ export const Dashboard = () => {
       <header className="dashboard-header">
         <h1>Dashboard</h1>
         <div className="dashboard-actions">
+          <button className="nav-button" onClick={() => navigate('/profile')}>
+            Profile
+          </button>
           <button className="nav-button" onClick={() => navigate('/categories')}>
             Configure Categories
           </button>
