@@ -19,6 +19,28 @@ export const Dashboard = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [lastGameResult, setLastGameResult] = useState(null);
     useEffect(() => {
+        if (!isAuthenticated)
+            return;
+        let cancelled = false;
+        const pollActiveUsers = async () => {
+            try {
+                await setTokenInApi();
+                const users = await apiClient.getActiveUsers();
+                if (!cancelled) {
+                    setActiveUsers([...new Set(users)]);
+                }
+            }
+            catch (error) {
+                console.error('Failed to refresh active users:', error);
+            }
+        };
+        const intervalId = setInterval(pollActiveUsers, 30000);
+        return () => {
+            cancelled = true;
+            clearInterval(intervalId);
+        };
+    }, [isAuthenticated, setTokenInApi]);
+    useEffect(() => {
         const fetchData = async () => {
             if (!isAuthenticated)
                 return;
