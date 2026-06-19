@@ -55,8 +55,13 @@ export const WebSocketProvider = ({
 
       ws.onmessage = (event) => {
         try {
-          const message = JSON.parse(event.data as string)
-          emit(message.type, message.data)
+          const message = JSON.parse(event.data as string) as Record<string, unknown>
+          const { type, ...payload } = message
+          if (typeof type !== 'string') {
+            console.error('WebSocket message missing type:', message)
+            return
+          }
+          emit(type, payload)
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error)
         }

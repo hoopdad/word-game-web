@@ -7,7 +7,7 @@ import './Dashboard.css'
 
 export const Dashboard = () => {
   const navigate = useNavigate()
-  const { send, on, off } = useWebSocket()
+  const { on, off } = useWebSocket()
   const { logout, setTokenInApi, isAuthenticated } = useAuth()
   const [activeUsers, setActiveUsers] = useState<string[]>([])
   const [gameCount, setGameCount] = useState(0)
@@ -48,15 +48,25 @@ export const Dashboard = () => {
     // Subscribe to WebSocket events
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleUserJoined = (data: any) => {
+      const username = data.display_name || data.user
+      if (!username) {
+        console.error('user_joined event missing user identity', data)
+        return
+      }
       setActiveUsers((prev) => {
-        const newUsers = [...prev, data.user]
+        const newUsers = [...prev, username]
         return [...new Set(newUsers)]
       })
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleUserLeft = (data: any) => {
-      setActiveUsers((prev) => prev.filter((user) => user !== data.user))
+      const username = data.display_name || data.user
+      if (!username) {
+        console.error('user_left event missing user identity', data)
+        return
+      }
+      setActiveUsers((prev) => prev.filter((user) => user !== username))
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -77,9 +87,14 @@ export const Dashboard = () => {
     }
   }, [on, off, setTokenInApi, isAuthenticated])
 
-  const handleStartGame = () => {
-    send({ type: 'start_game' })
-    navigate('/game')
+  const handleStartGame = async () => {
+    try {
+      await setTokenInApi()
+      await apiClient.startGame()
+      navigate('/game')
+    } catch (error) {
+      console.error('Failed to start game:', error)
+    }
   }
 
   return (
@@ -160,9 +175,11 @@ export const Dashboard = () => {
             </section>
 
             <section className="game-controls">
-              <button className="start-game-button" onClick={handleStartGame}>
-                Start Game
-              </button>
+              {activeUsers.length >= 2 && (
+                <button className="start-game-button" onClick={handleStartGame}>
+                  Start Game
+                </button>
+              )}
             </section>
           </>
         )}

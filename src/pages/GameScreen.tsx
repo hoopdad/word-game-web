@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useWebSocket } from '@/context/WebSocketContext'
 import './GameScreen.css'
 
 export const GameScreen = () => {
   const { send, on, off } = useWebSocket()
-  const [gameStatus, setGameStatus] = useState('waiting')
+  const [gameStatus, setGameStatus] = useState('gathering_categories')
   const [role, setRole] = useState<'guesser' | 'cluegiver' | null>(null)
   const [word, setWord] = useState<string | null>(null)
-  const [guesser, setGuesser] = useState<string | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [categories, setCategories] = useState<any[]>([])
   const [guesses, setGuesses] = useState<string[]>([])
@@ -16,58 +15,86 @@ export const GameScreen = () => {
   const [countdown, setCountdown] = useState(10)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [gameResult, setGameResult] = useState<any | null>(null)
+  const userIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleGameStatus = (data: any) => setGameStatus(data.status)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleRoleAssignment = (data: any) => {
-      setRole(data.role)
-      setGuesser(data.guesser)
-      setCountdown(10)
+    const handleConnected = (data: any) => {
+      if (typeof data.user_id === 'string') {
+        userIdRef.current = data.user_id
+      }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleCategoriesReady = (data: any) => setCategories(data.categories)
+    const handleGameStatus = (data: any) => {
+      if (typeof data.status === 'string') {
+        setGameStatus(data.status)
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleCategoryOverview = (data: any) => {
+      setCategories(Array.isArray(data.categories) ? data.categories : [])
+      setGameStatus('categories_ready')
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleRoundStart = (data: any) => {
-      if (data.role === 'cluegiver') {
+      const isGuesser = data.guesser_id === userIdRef.current
+      setRole(isGuesser ? 'guesser' : 'cluegiver')
+      setGuesses([])
+      setWord(null)
+      setCountdown(typeof data.remaining === 'number' ? data.remaining : 10)
+      if (!isGuesser && typeof data.word === 'string') {
         setWord(data.word)
+      }
+      if (typeof data.status === 'string') {
+        setGameStatus(data.status)
       }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleGuessSubmitted = (data: any) => {
-      setGuesses((prev) => [...prev, `${data.user}: ${data.guess}`])
+      const username = data.display_name || data.user || 'Unknown'
+      if (typeof data.guess === 'string' && data.guess.length > 0) {
+        setGuesses((prev) => [...prev, `${username}: ${data.guess}`])
+      }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleGuessCorrect = (data: any) => {
-      if (role === 'guesser') {
+    const handleScoreUpdated = (data: any) => {
+      if (role === 'guesser' && typeof data.word === 'string') {
         setWord(data.word)
       }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleTimer = (data: any) => setTimeRemaining(data.remainingSeconds)
+    const handleTimer = (data: any) => {
+      if (typeof data.remaining === 'number') {
+        setTimeRemaining(data.remaining)
+      }
+      setGameStatus('round_active')
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleCountdown = (data: any) => setCountdown(data.remaining)
+    const handleCountdown = (data: any) => {
+      if (typeof data.remaining === 'number') {
+        setCountdown(data.remaining)
+      }
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleGameEnd = (data: any) => setGameResult(data)
 
-    on('game_status_updated', handleGameStatus)
-    on('role_assigned', handleRoleAssignment)
-    on('categories_ready', handleCategoriesReady)
+    on('connected', handleConnected)
+    on('game_started', handleGameStatus)
+    on('category_overview', handleCategoryOverview)
     on('round_started', handleRoundStart)
     on('guess_submitted', handleGuessSubmitted)
-    on('guess_correct', handleGuessCorrect)
+    on('score_updated', handleScoreUpdated)
     on('timer_tick', handleTimer)
     on('countdown_tick', handleCountdown)
     on('game_ended', handleGameEnd)
 
     return () => {
-      off('game_status_updated', handleGameStatus)
-      off('role_assigned', handleRoleAssignment)
-      off('categories_ready', handleCategoriesReady)
+      off('connected', handleConnected)
+      off('game_started', handleGameStatus)
+      off('category_overview', handleCategoryOverview)
       off('round_started', handleRoundStart)
       off('guess_submitted', handleGuessSubmitted)
-      off('guess_correct', handleGuessCorrect)
+      off('score_updated', handleScoreUpdated)
       off('timer_tick', handleTimer)
       off('countdown_tick', handleCountdown)
       off('game_ended', handleGameEnd)
@@ -139,17 +166,18 @@ export const GameScreen = () => {
     )
   }
 
-  if (gameStatus === 'role_assignment' || countdown > 0) {
+  if (gameStatus !== 'round_active') {
     return (
       <div className="game-screen">
         <div className="game-content">
           <h2>Preparing for round...</h2>
           <p className="role-display">
-            {role === 'guesser'
-              ? `You are the GUESSER`
-              : `You are a CLUE-GIVER`}
+            {role === null
+              ? 'Assigning roles...'
+              : role === 'guesser'
+                ? `You are the GUESSER`
+                : `You are a CLUE-GIVER`}
           </p>
-          <p className="guesser-info">Guesser: {guesser}</p>
           <div className="countdown">{countdown}</div>
         </div>
       </div>
