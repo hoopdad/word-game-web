@@ -11,52 +11,72 @@ Run this workflow only from the child repo root via a NEW Copilot CLI invocation
 - Repository: ../word-game-web
 - Stack: TypeScript / React 18 / Vite / Vitest / Playwright
 - Validation: `npm run lint && npm test && npm run build && docker build -t word-game-web:local .`
-- Workflows must run on `self-hosted` runners only.
-- CD must use SHA-named Container Apps (`wordgame-web-v<sha7>`) with image tags `:sha` and `:latest`.
-- Use standardized secret names in workflows: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `ACR_NAME`, `ACR_LOGIN_SERVER`, `RESOURCE_GROUP`, `CONTAINER_APP_ENV`, `MANAGED_IDENTITY_ID`.
+
+## Known File Locations (DO NOT search — use directly)
+
+| Purpose | Path |
+|---------|------|
+| MSAL auth hook | src/hooks/useAuth.ts |
+| App entry + MSAL config | src/App.tsx |
+| API client | src/services/apiClient.ts |
+| Vite config | vite.config.ts |
+| Dockerfile | Dockerfile |
+| Nginx config | nginx.conf |
+| Index HTML | index.html |
+| Package manifest | package.json |
+| Tests | src/**/*.test.ts(x) |
+
+## MSAL Configuration Rules (Hard Gates)
+
+These rules are non-negotiable — violating any one causes production failures:
+
+1. **redirectUri**: MUST be `${window.location.origin}/welcome` (runtime-derived, NEVER a VITE_* env var)
+2. **Token fallback**: MUST use `acquireTokenPopup` (NEVER `acquireTokenRedirect` — causes infinite page reload)
+3. **Scope construction**: Use `api://${import.meta.env.VITE_MSAL_API_CLIENT_ID}/access_as_user`
+4. **Dockerfile ARG order**: `ARG VITE_MSAL_*` and `ENV VITE_MSAL_*=$VITE_MSAL_*` MUST appear BEFORE `RUN npm run build`
+5. **API base URL**: Must be `/api` (relative) in apiClient.ts — never absolute, never localhost
+
+## Pre-Build Validation (Run BEFORE docker build)
+
+```bash
+# Quick 3-second sanity check — catches 90% of auth issues
+grep -q 'acquireTokenPopup' src/hooks/useAuth.ts || echo "FAIL: popup required"
+grep -q 'window.location.origin' src/App.tsx || echo "FAIL: runtime redirectUri"
+grep -q 'VITE_MSAL_API_CLIENT_ID' src/hooks/useAuth.ts || echo "FAIL: API client ID for scope"
+awk '/^ARG VITE_MSAL/{found=1} /^RUN npm run build/{if(!found) print "FAIL: ARGs must precede build"}' Dockerfile
+```
 
 ## Protocol
 1. Pick the next change request file from `work/todo/` (one file = one request)
-2. Read .requirements/*.yml and .contracts/*.yml context referenced by the request, including `.requirements/platform-guardrails.yml` `pattern_constraints` for this repo
-3. Implement ONLY in this repo, matching the request acceptance criteria.
-   - If the repo is greenfield or sparse, scaffold the minimal code/project structure needed to satisfy the request instead of treating missing pre-existing patterns as a blocker.
+2. Read .requirements/*.yml and .contracts/*.yml context referenced by the request
+3. Implement ONLY in this repo, matching the request acceptance criteria
 4. Run validation before committing:
    - Lint: `npm run lint`
    - Test: `npm test`
    - Build: `npm run build`
    - Docker: `docker build -t word-game-web:local .`
-   - **Contract check:** When modifying API calls (apiClient.ts or any service that calls the backend), verify EVERY request matches `.contracts/game-api.yml`:
-     - Path must match contract endpoint path (with `/api` prefix via base URL)
-     - HTTP method must match
-     - Request body field names must use **snake_case** to match Pydantic models (e.g., `display_name`, NOT `displayName`)
-     - Response field names consumed must match contract response schema
-5. Commit with a conventional commit message when handing off to critic review, with exactly one commit per specialist→critic iteration (1 loop = 1 commit; 3 loops = 3 commits)
-   - **MANDATORY:** Run `git status` before handoff and verify the output shows "working tree clean" — if any files are uncommitted, fix this before moving to step 6
-6. Append a short implementation summary to the request file and move it to `work/ready-for-review/`
-7. If a parent orchestrator tries to route child execution through background sub-agents or `task`, reject that path and insist on MCP-first orchestration (`check_repo_index` + async child-agent-runner dispatch tools such as `start_child_agents_batch`/`start_child_agent`)
+   - **Contract check:** Verify ALL API calls match `.contracts/game-api.yml` (paths, methods, snake_case fields)
+5. Commit with a conventional commit message
+6. Move request file to `work/ready-for-review/`
 
 ## API Contract Alignment Rules
-- The API uses Python/FastAPI with Pydantic models — all field names are **snake_case**
-- The frontend must send snake_case field names in request bodies (e.g., `{ display_name: value }`)
-- JavaScript variable names (camelCase) are fine internally, but must be converted at the API boundary
-- The `apiClient.ts` base URL must be `/api` (relative) — never an absolute URL or localhost in production
-- WebSocket and MSAL redirect URLs must be derived from `window.location` at runtime, not build-time env vars
-- Read `.contracts/game-api.yml` to verify path, method, and field name alignment before any API-touching change
+- All request body field names MUST be **snake_case** (e.g., `display_name`, NOT `displayName`)
+- apiClient.ts base URL = `/api` (relative)
+- WebSocket URL = `${window.location.origin.replace('http', 'ws')}/ws`
+- Read `.contracts/game-api.yml` before any API-touching change
 
-## MCP Skill/Workflow Callouts
-- **Linting:** Use `run_local_lint` before tests/builds to catch fast local issues.
-- **Contract checks:** Use `check_contract_compliance` when API calls or service code changes.
-- **Security:** Run `security_scan` before handoff.
-- **Usage quality:** Log major steps with `log_usage`; if iteration loops, call `get_usage_quality_report`.
-
-
+## Token Efficiency Rules
+- **Never use `find` or `ls`** to locate files — paths are in the table above
+- **Never search for Entra IDs** — they're in `.copilot/topology.md` (harness repo)
+- **Batch related edits** — make all changes to a file in one turn, not across multiple
+- **Run validation once at the end** — not after each individual file change
+- **One build cycle per fix** — edit all files → build → test (not edit→build→edit→build)
 
 ## Anti-Patterns
-- Never run this from the parent repo; always use a new call with cwd set to this child repo
+- Never run this from the parent repo
 - Never modify other repos
-- Never change .contracts/ or .requirements/ without coordinator approval
+- Never use `find` to locate known files (see table above)
+- Never use `acquireTokenRedirect` anywhere
+- Never hardcode redirect URIs as build-time env vars
 - Never skip validation
-- Never move work items straight to `work/done/` (critic must approve first)
-- Never squash or combine commits from separate specialist→critic iterations
-- Never accept child execution that bypasses MCP-first orchestration from the parent orchestrator
-- **Never handoff to critic with uncommitted changes** — always verify `git status` shows "working tree clean" before moving work to `work/ready-for-review/`
+- Never handoff to critic with uncommitted changes
