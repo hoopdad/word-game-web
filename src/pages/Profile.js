@@ -4,9 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDebounce } from '@/hooks/useCustomHooks';
 import apiClient from '@/services/apiClient';
+import { isDisplayNameValid } from '@/utils/validation';
 import './Profile.css';
-const DISPLAY_NAME_REGEX = /^[A-Za-z0-9 ]{2,20}$/;
-const isDisplayNameValid = (name) => DISPLAY_NAME_REGEX.test(name);
 export const Profile = () => {
     const navigate = useNavigate();
     const { setTokenInApi } = useAuth();
@@ -76,7 +75,10 @@ export const Profile = () => {
         catch (err) {
             const error = err;
             if (error.response?.status === 409) {
-                setError('that name is taken');
+                setError('That name is taken');
+            }
+            else if (error.response?.status === 422) {
+                setError(error.response.data?.detail ?? 'Display name must be 2-20 letters, numbers, and spaces.');
             }
             else {
                 setError('Failed to update profile. Please try again.');

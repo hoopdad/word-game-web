@@ -3,11 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useDebounce } from '@/hooks/useCustomHooks'
 import apiClient from '@/services/apiClient'
+import { isDisplayNameValid } from '@/utils/validation'
 import './Profile.css'
-
-const DISPLAY_NAME_REGEX = /^[A-Za-z0-9 ]{2,20}$/
-
-const isDisplayNameValid = (name: string) => DISPLAY_NAME_REGEX.test(name)
 
 export const Profile = () => {
   const navigate = useNavigate()
@@ -80,9 +77,13 @@ export const Profile = () => {
       localStorage.setItem('displayName', displayName)
       navigate('/dashboard')
     } catch (err: unknown) {
-      const error = err as { response?: { status?: number } }
+      const error = err as { response?: { status?: number; data?: { detail?: string } } }
       if (error.response?.status === 409) {
-        setError('that name is taken')
+        setError('That name is taken')
+      } else if (error.response?.status === 422) {
+        setError(
+          error.response.data?.detail ?? 'Display name must be 2-20 letters, numbers, and spaces.',
+        )
       } else {
         setError('Failed to update profile. Please try again.')
       }

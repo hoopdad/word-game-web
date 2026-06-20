@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useDebounce } from '@/hooks/useCustomHooks'
 import apiClient from '@/services/apiClient'
+import { isDisplayNameValid } from '@/utils/validation'
 import './NameEntry.css'
 
 export const NameEntry = () => {
@@ -14,6 +15,13 @@ export const NameEntry = () => {
   const [error, setError] = useState<string | null>(null)
   const [tokenReady, setTokenReady] = useState(false)
   const debouncedName = useDebounce(displayName, 300)
+  const isDisplayNameFormatValid = isDisplayNameValid(displayName)
+  const showFormatHint = displayName.length > 0 && !isDisplayNameFormatValid
+  const nameInputDescriptionId = showFormatHint
+    ? 'name-format-hint'
+    : isAvailable === false
+      ? 'name-error'
+      : undefined
 
   // Initialize token on mount
   useEffect(() => {
@@ -31,9 +39,15 @@ export const NameEntry = () => {
   useEffect(() => {
     // Only check name availability after token is ready
     if (!tokenReady) return
-    if (debouncedName.length >= 2 && debouncedName.length <= 20) {
+
+    if (debouncedName.length === 0) {
+      setIsAvailable(null)
+      return
+    }
+
+    if (isDisplayNameValid(debouncedName)) {
       checkNameAvailability(debouncedName)
-    } else if (debouncedName.length < 2) {
+    } else {
       setIsAvailable(null)
     }
   }, [debouncedName, tokenReady])
@@ -54,20 +68,24 @@ export const NameEntry = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!isAvailable || displayName.length < 2 || displayName.length > 20) {
+    if (!isDisplayNameFormatValid || !isAvailable) {
       return
     }
 
     try {
       setLoading(true)
+      setError(null)
       await apiClient.registerUser(displayName)
       localStorage.setItem('displayName', displayName)
       navigate('/dashboard')
     } catch (err: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const error = err as any
+      const error = err as { response?: { status?: number; data?: { detail?: string } } }
       if (error.response?.status === 409) {
         setError('That name is taken')
+      } else if (error.response?.status === 422) {
+        setError(
+          error.response.data?.detail ?? 'Display name must be 2-20 letters, numbers, and spaces.',
+        )
       } else {
         setError('Failed to register. Please try again.')
       }
@@ -89,13 +107,22 @@ export const NameEntry = () => {
               id="displayName"
               type="text"
               value={displayName}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setDisplayName(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+               setDisplayName(e.target.value)
+               setError(null)
+              }}
               placeholder="2-20 characters"
               maxLength={20}
               minLength={2}
               disabled={loading || !tokenReady}
-              aria-describedby={isAvailable === false ? 'name-error' : undefined}
+              aria-describedby={nameInputDescriptionId}
+              aria-invalid={showFormatHint}
             />
+            {showFormatHint && (
+              <span className="validation-hint" id="name-format-hint">
+               2-20 letters, numbers, and spaces
+              </span>
+            )}
             {loading && <span className="loading">Checking...</span>}
             {isAvailable === true && <span className="available">✓ Available</span>}
             {isAvailable === false && (
@@ -109,7 +136,7 @@ export const NameEntry = () => {
 
           <button
             type="submit"
-            disabled={!isAvailable || loading || displayName.length < 2}
+            disabled={!isAvailable || loading || !isDisplayNameFormatValid}
             className="submit-button"
           >
             {loading ? 'Setting up...' : 'Continue'}

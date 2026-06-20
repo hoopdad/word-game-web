@@ -47,11 +47,12 @@ class ApiClient {
 
   async checkNameAvailability(name: string): Promise<boolean> {
     try {
-      const response = await this.client.get(`/users/check-name/${encodeURIComponent(name)}`)
-      return response.status === 200
+      const response = await this.client.get<{ available?: boolean }>(
+        `/users/check-name/${encodeURIComponent(name)}`,
+      )
+      return response.data?.available === true
     } catch (error: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const axiosError = error as any
+      const axiosError = error as { response?: { status?: number } }
       if (axiosError.response?.status === 409) {
         return false
       }
