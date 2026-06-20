@@ -16,21 +16,16 @@ This repository contains the **word-game frontend**: a React/TypeScript SPA for 
 - API calls must send Bearer access tokens
 - Render user/game text content as text (no HTML injection paths)
 
-## CI/CD expectations
+## Deployment (local azd — no GitHub Actions)
 
-- Workflows run on self-hosted runners
-- CI ordering is fail-fast: `lint -> security-scan -> test -> build`
-- CD uses SHA-named deployments (`wordgame-web-v<sha7>`) and image tags `:sha` + `:latest`
-- Azure auth is OIDC-based with:
-  - `AZURE_CLIENT_ID`
-  - `AZURE_TENANT_ID`
-  - `AZURE_SUBSCRIPTION_ID`
-- Standard deployment secrets:
-  - `ACR_NAME`
-  - `ACR_LOGIN_SERVER`
-  - `RESOURCE_GROUP`
-  - `CONTAINER_APP_ENV`
-  - `MANAGED_IDENTITY_ID`
+- Deployment is performed locally with the **Azure Developer CLI (`azd`)** from the harness repo
+  (`word-game-harness`). There are **no GitHub Actions pipelines, self-hosted runners, or OIDC
+  deployment secrets** in this repo — do not add them.
+- Local validation order is fail-fast: `lint -> security-scan -> test -> build`.
+- Before any deploy, the orchestrator runs `scripts/predeploy-gate.sh` to commit, push, and
+  version-tag every repo. Never deploy uncommitted/unpushed code.
+- Container images are built and pushed by `azd` / `bash scripts/azd-deploy.sh web` (Azure CLI
+  `az login`, not OIDC federation).
 
 ## Validation commands
 

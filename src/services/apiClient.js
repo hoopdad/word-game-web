@@ -79,8 +79,15 @@ class ApiClient {
     }
     async startGame() {
         const response = await this.client.post('/game/start', {});
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return response.data.gameId;
+        const data = response.data;
+        if (typeof data.game_id !== 'string') {
+            throw new Error('Missing game_id in start game response');
+        }
+        return data.game_id;
+    }
+    async getGameStatus() {
+        const response = await this.client.get('/game/status');
+        return response.data;
     }
     async getCategoryConfig() {
         const response = await this.client.get('/categories/config');
@@ -95,5 +102,5 @@ class ApiClient {
         return response.data.ticket;
     }
 }
-const apiClient = new ApiClient(import.meta.env.VITE_API_BASE_URL || '/api');
+const apiClient = new ApiClient('/api');
 export default apiClient;

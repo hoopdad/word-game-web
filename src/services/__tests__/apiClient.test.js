@@ -31,6 +31,9 @@ describe('apiClient', () => {
     it('should have startGame method', () => {
         expect(typeof apiClient.startGame).toBe('function');
     });
+    it('should have getGameStatus method', () => {
+        expect(typeof apiClient.getGameStatus).toBe('function');
+    });
     it('should setAuthToken and use it in requests', () => {
         apiClient.setAuthToken('test-token');
         expect(typeof apiClient.setAuthToken).toBe('function');

@@ -19,6 +19,21 @@ export const Dashboard = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [lastGameResult, setLastGameResult] = useState<any | null>(null)
 
+  const formatWinnerName = (winner: unknown): string => {
+    if (typeof winner === 'string') {
+      return winner
+    }
+    if (
+      winner &&
+      typeof winner === 'object' &&
+      'display_name' in winner &&
+      typeof winner.display_name === 'string'
+    ) {
+      return winner.display_name
+    }
+    return ''
+  }
+
   useEffect(() => {
     if (!isAuthenticated) return
 
@@ -101,16 +116,20 @@ export const Dashboard = () => {
       setTimeout(() => setLastGameResult(null), 5000)
     }
 
+    const handleGameStarted = () => navigate('/game')
+
     on('user_joined', handleUserJoined)
     on('user_left', handleUserLeft)
     on('game_ended', handleGameEnded)
+    on('game_started', handleGameStarted)
 
     return () => {
       off('user_joined', handleUserJoined)
       off('user_left', handleUserLeft)
       off('game_ended', handleGameEnded)
+      off('game_started', handleGameStarted)
     }
-  }, [on, off, setTokenInApi, isAuthenticated])
+  }, [on, off, setTokenInApi, isAuthenticated, navigate])
 
   const handleStartGame = async () => {
     try {
@@ -141,7 +160,7 @@ export const Dashboard = () => {
 
       {lastGameResult && (
         <div className="post-game-status">
-          🎉 Congratulations to {lastGameResult.winners.join(', ')}! 🎉
+          🎉 Congratulations to {(lastGameResult.winners || []).map(formatWinnerName).filter(Boolean).join(', ')}! 🎉
         </div>
       )}
 

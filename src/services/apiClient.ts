@@ -10,6 +10,19 @@ interface CategoryConfigUpdateRequest {
   urls: string[]
 }
 
+interface GameStatusResponse {
+  status: string
+  game_id: string | null
+  current_category: string | null
+  current_guesser: string | null
+  current_guesser_name: string | null
+  your_user_id: string | null
+  your_role: 'guesser' | 'cluegiver' | null
+  round_remaining: number
+  countdown_remaining: number
+  scores: Record<string, number>
+}
+
 class ApiClient {
   private client: AxiosInstance
   private authToken?: string
@@ -90,8 +103,16 @@ class ApiClient {
 
   async startGame(): Promise<string> {
     const response = await this.client.post('/game/start', {})
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (response.data as any).gameId
+    const data = response.data as { game_id?: string }
+    if (typeof data.game_id !== 'string') {
+      throw new Error('Missing game_id in start game response')
+    }
+    return data.game_id
+  }
+
+  async getGameStatus(): Promise<GameStatusResponse> {
+    const response = await this.client.get('/game/status')
+    return response.data as GameStatusResponse
   }
 
   async getCategoryConfig(): Promise<CategoryConfigResponse> {
@@ -110,6 +131,6 @@ class ApiClient {
   }
 }
 
-const apiClient = new ApiClient(import.meta.env.VITE_API_BASE_URL || '/api')
+const apiClient = new ApiClient('/api')
 
 export default apiClient
